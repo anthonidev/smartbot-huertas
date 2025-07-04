@@ -15,7 +15,7 @@ const envsSchema = joi
       .string()
       .default('nats://localhost:4222')
       .description('NATS server URI'),
-    PORT: joi.number().default(3000),
+    PORT: joi.number().default(3001),
     NODE_ENV: joi
       .string()
       .valid('development', 'production', 'test')
