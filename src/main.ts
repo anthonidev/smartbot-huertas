@@ -5,15 +5,13 @@ import { AppModule } from './app.module';
 import { envs } from './config/envs';
 
 async function bootstrap() {
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-    AppModule,
-    {
-      transport: Transport.NATS,
-      options: {
-        servers: [envs.NATS_SERVERS],
-      },
+  const app = await NestFactory.create(AppModule);
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.NATS,
+    options: {
+      servers: [envs.NATS_SERVERS], // Asegúrate que coincida con la variable
     },
-  );
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -26,7 +24,7 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen();
+  await app.listen(envs.PORT);
   console.log(
     `🚀 Microservice ChatBot running with NATS on ${envs.NATS_SERVERS}`,
   );
