@@ -6,6 +6,7 @@ interface EnvVars {
   NODE_ENV: 'development' | 'production' | 'test';
   NATS_SERVERS: string;
   MONGODB_URI: string;
+  CLAUDE_API_KEY: string;
 }
 
 const envsSchema = joi
@@ -20,6 +21,7 @@ const envsSchema = joi
       .valid('development', 'production', 'test')
       .default('development'),
     MONGODB_URI: joi.string().required().description('MongoDB connection URI'),
+    CLAUDE_API_KEY: joi.string().required().description('Claude API key'),
   })
   .unknown(true);
 

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { envs } from './config/envs';
 import { ChatbotModule } from './chatbot/chatbot.module';
+import { ContextModule } from './context/context.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { ChatbotModule } from './chatbot/chatbot.module';
       bufferCommands: false,
     }),
     ChatbotModule,
+    ContextModule,
   ],
 })
 export class AppModule {}
