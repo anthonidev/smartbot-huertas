@@ -12,6 +12,7 @@ export class ContextController {
 
   @MessagePattern('context.base.create')
   createContextBase(@Payload() data: CreateContextBaseDto) {
+    console.log('data query:', data);
     return this.contextService.createContextBase(data);
   }
 
