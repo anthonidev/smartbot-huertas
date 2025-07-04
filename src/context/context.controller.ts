@@ -11,21 +11,21 @@ export class ContextController {
   constructor(private readonly contextService: ContextService) {}
 
   @MessagePattern('context.base.create')
-  createContextBase(@Payload() createContextBaseDto: CreateContextBaseDto) {
-    return this.contextService.createContextBase(createContextBaseDto);
+  createContextBase(@Payload() data: CreateContextBaseDto) {
+    return this.contextService.createContextBase(data);
   }
 
   @MessagePattern('context.quick-help.create')
-  createQuickHelp(@Payload() createQuickHelpDto: CreateQuickHelpDto) {
-    return this.contextService.createQuickHelp(createQuickHelpDto);
+  createQuickHelp(@Payload() data: CreateQuickHelpDto) {
+    return this.contextService.createQuickHelp(data);
   }
 
   @MessagePattern('context.system-guide.create')
-  createSystemGuide(@Payload() createSystemGuideDto: CreateSystemGuideDto) {
-    return this.contextService.createSystemGuide(createSystemGuideDto);
+  createSystemGuide(@Payload() data: CreateSystemGuideDto) {
+    return this.contextService.createSystemGuide(data);
   }
   @MessagePattern('context.role-context.create')
-  createRoleContext(@Payload() createRoleContextDto: CreateRoleContextDto) {
-    return this.contextService.createRoleContext(createRoleContextDto);
+  createRoleContext(@Payload() data: CreateRoleContextDto) {
+    return this.contextService.createRoleContext(data);
   }
 }
