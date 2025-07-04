@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { envs } from './config/envs';
+import { ChatbotModule } from './chatbot/chatbot.module';
 
 @Module({
   imports: [
@@ -10,6 +11,7 @@ import { envs } from './config/envs';
       socketTimeoutMS: 45000,
       bufferCommands: false,
     }),
+    ChatbotModule,
   ],
 })
 export class AppModule {}
