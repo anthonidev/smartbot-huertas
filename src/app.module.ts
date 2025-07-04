@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { envs } from './config/envs';
 import { ContextModule } from './context/context.module';
+import { ClaudeApiModule } from './claude-api/claude-api.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { ContextModule } from './context/context.module';
       bufferCommands: false,
     }),
     ContextModule,
+    ClaudeApiModule,
   ],
   controllers: [],
   providers: [],

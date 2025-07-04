@@ -1,17 +1,10 @@
-import {
-  IsString,
-  IsObject,
-  IsBoolean,
-  IsOptional,
-  IsNotEmpty,
-} from 'class-validator';
+import { IsString, IsBoolean, IsOptional, IsNotEmpty } from 'class-validator';
 
 export class CreateContextBaseDto {
   @IsString()
   @IsNotEmpty()
   key: string;
 
-  @IsObject()
   @IsNotEmpty()
   value: any;
 
