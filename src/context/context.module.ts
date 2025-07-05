@@ -6,6 +6,10 @@ import { ContextBase, ContextBaseSchema } from './entities/context-base.entity';
 import { QuickHelp, QuickHelpSchema } from './entities/quick-help.entity';
 import { RoleContext, RoleContextSchema } from './entities/role-context.entity';
 import { SystemGuide, SystemGuideSchema } from './entities/system-guide.entity';
+import {
+  DatabaseAccess,
+  DatabaseAccessSchema,
+} from './entities/database.entity';
 
 @Module({
   imports: [
@@ -14,6 +18,7 @@ import { SystemGuide, SystemGuideSchema } from './entities/system-guide.entity';
       { name: QuickHelp.name, schema: QuickHelpSchema },
       { name: SystemGuide.name, schema: SystemGuideSchema },
       { name: RoleContext.name, schema: RoleContextSchema },
+      { name: DatabaseAccess.name, schema: DatabaseAccessSchema },
     ]),
   ],
   controllers: [ContextController],

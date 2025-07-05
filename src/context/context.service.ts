@@ -11,6 +11,8 @@ import { CreateSystemGuideDto } from './dto/create-system-guide.dto';
 import { RoleContext } from './entities/role-context.entity';
 import { CreateRoleContextDto } from './dto/create-role-context.dto';
 import { RoleUser } from 'src/common/interfaces/user.interface';
+import { DatabaseAccess } from './entities/database.entity';
+import { CreateDatabaseAccessDto } from './dto/create-database-context.dto';
 
 @Injectable()
 export class ContextService {
@@ -23,6 +25,8 @@ export class ContextService {
     private readonly systemGuideModel: Model<SystemGuide>,
     @InjectModel(RoleContext.name)
     private readonly roleContextModel: Model<RoleContext>,
+    @InjectModel(DatabaseAccess.name)
+    private readonly databaseAccessModel: Model<DatabaseAccess>,
   ) {}
 
   async createContextBase(createContextBaseDto: CreateContextBaseDto) {
@@ -427,6 +431,119 @@ export class ContextService {
         status: 400,
         success: false,
         message: 'Error al obtener las guías disponibles',
+        error: error.message,
+      });
+    }
+  }
+
+  async createDatabaseAccess(createDatabaseAccessDto: CreateDatabaseAccessDto) {
+    try {
+      const {
+        roleCode,
+        roleName,
+        allowedTables,
+        databaseSchema,
+        restrictedColumns,
+        allowedOperations,
+        queryLimits,
+        isActive = true,
+      } = createDatabaseAccessDto;
+
+      // Buscar si ya existe configuración para este rol
+      const existingAccess = await this.databaseAccessModel.findOne({
+        roleCode,
+      });
+
+      if (existingAccess) {
+        // Si existe, actualizar con los nuevos valores
+        existingAccess.roleName = roleName;
+        existingAccess.allowedTables = allowedTables;
+        existingAccess.databaseSchema = databaseSchema;
+        existingAccess.restrictedColumns = restrictedColumns;
+        existingAccess.allowedOperations = allowedOperations;
+        existingAccess.queryLimits = queryLimits;
+        existingAccess.isActive = isActive;
+
+        const updatedAccess = await existingAccess.save();
+
+        return {
+          success: true,
+          message: `Database Access para rol '${roleCode}' actualizado exitosamente`,
+          data: {
+            id: updatedAccess._id,
+            roleCode: updatedAccess.roleCode,
+            roleName: updatedAccess.roleName,
+            allowedTablesCount: updatedAccess.allowedTables.length,
+            allowedOperations: updatedAccess.allowedOperations,
+            isActive: updatedAccess.isActive,
+          },
+          action: 'updated',
+        };
+      } else {
+        // Si no existe, crear nueva configuración
+        const newAccess = new this.databaseAccessModel({
+          roleCode,
+          roleName,
+          allowedTables,
+          databaseSchema,
+          restrictedColumns,
+          allowedOperations,
+          queryLimits,
+          isActive,
+        });
+
+        const savedAccess = await newAccess.save();
+
+        return {
+          success: true,
+          message: `Database Access para rol '${roleCode}' creado exitosamente`,
+          data: {
+            id: savedAccess._id,
+            roleCode: savedAccess.roleCode,
+            roleName: savedAccess.roleName,
+            allowedTablesCount: savedAccess.allowedTables.length,
+            allowedOperations: savedAccess.allowedOperations,
+            isActive: savedAccess.isActive,
+          },
+          action: 'created',
+        };
+      }
+    } catch (error) {
+      throw new RpcException({
+        status: 400,
+        success: false,
+        message: 'Error al crear/actualizar Database Access',
+        error: error.message,
+      });
+    }
+  }
+
+  async getDatabaseAccessByRole(roleCode: string) {
+    try {
+      const access = await this.databaseAccessModel
+        .findOne({ roleCode, isActive: true })
+        .lean();
+
+      if (!access) {
+        throw new RpcException({
+          status: 404,
+          success: false,
+          message: `No se encontró configuración de acceso para el rol '${roleCode}'`,
+        });
+      }
+
+      return {
+        success: true,
+        data: access,
+      };
+    } catch (error) {
+      if (error instanceof RpcException) {
+        throw error;
+      }
+      throw new RpcException({
+        status: 400,
+        success: false,
+        message: 'Error al obtener configuración de acceso',
         error: error.message,
       });
     }

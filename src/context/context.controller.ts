@@ -6,6 +6,7 @@ import { CreateContextBaseDto } from './dto/create-base-context.dto';
 import { CreateQuickHelpDto } from './dto/create-quick-help.dto';
 import { CreateRoleContextDto } from './dto/create-role-context.dto';
 import { CreateSystemGuideDto } from './dto/create-system-guide.dto';
+import { CreateDatabaseAccessDto } from './dto/create-database-context.dto';
 
 @Controller()
 export class ContextController {
@@ -29,6 +30,11 @@ export class ContextController {
   @MessagePattern({ cmd: 'context.role-context.create' })
   createRoleContext(@Payload() data: CreateRoleContextDto) {
     return this.contextService.createRoleContext(data);
+  }
+
+  @MessagePattern({ cmd: 'context.database-access.create' })
+  createDatabaseAccess(@Payload() data: CreateDatabaseAccessDto) {
+    return this.contextService.createDatabaseAccess(data);
   }
 
   @MessagePattern({ cmd: 'context.quick-help.get-by-role' })
