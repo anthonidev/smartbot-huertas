@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { envs } from './config/envs';
 import { ContextModule } from './context/context.module';
 import { ClaudeApiModule } from './claude-api/claude-api.module';
+import { ChatbotModule } from './chatbot/chatbot.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { ClaudeApiModule } from './claude-api/claude-api.module';
     }),
     ContextModule,
     ClaudeApiModule,
+    ChatbotModule,
   ],
   controllers: [],
   providers: [],
