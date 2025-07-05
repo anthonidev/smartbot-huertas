@@ -1,4 +1,5 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ContextBase } from './entities/context-base.entity';
@@ -9,6 +10,19 @@ import { SystemGuide } from './entities/system-guide.entity';
 import { CreateSystemGuideDto } from './dto/create-system-guide.dto';
 import { RoleContext } from './entities/role-context.entity';
 import { CreateRoleContextDto } from './dto/create-role-context.dto';
+
+interface JwtUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  role: {
+    id: number;
+    name: string;
+    code: string;
+  };
+}
 
 @Injectable()
 export class ContextService {
@@ -65,7 +79,8 @@ export class ContextService {
         };
       }
     } catch (error) {
-      throw new BadRequestException({
+      throw new RpcException({
+        status: 400,
         success: false,
         message: 'Error al crear/actualizar context base',
         error: error.message,
@@ -115,18 +130,21 @@ export class ContextService {
         action: 'created',
       };
     } catch (error) {
-      throw new BadRequestException({
+      throw new RpcException({
+        status: 400,
         success: false,
         message: 'Error al crear Quick Help',
         error: error.message,
       });
     }
   }
+
   async getQuickHelpByRole(roleCode: string): Promise<QuickHelp[]> {
     return this.quickHelpModel
       .find({ roleCode, isActive: true })
       .sort({ order: 1 });
   }
+
   async createSystemGuide(createSystemGuideDto: CreateSystemGuideDto) {
     try {
       const {
@@ -200,7 +218,8 @@ export class ContextService {
         };
       }
     } catch (error) {
-      throw new BadRequestException({
+      throw new RpcException({
+        status: 400,
         success: false,
         message: 'Error al crear/actualizar System Guide',
         error: error.message,
@@ -300,18 +319,122 @@ export class ContextService {
         };
       }
     } catch (error) {
-      throw new BadRequestException({
+      throw new RpcException({
+        status: 400,
         success: false,
         message: 'Error al crear/actualizar Role Context',
         error: error.message,
       });
     }
   }
+
   async getRoleContextByCode(roleCode: string): Promise<RoleContext | null> {
     return this.roleContextModel.findOne({ roleCode, isActive: true });
   }
 
   async getAllActiveRoleContexts(): Promise<RoleContext[]> {
     return this.roleContextModel.find({ isActive: true });
+  }
+
+  // ============ NUEVOS MÉTODOS PARA LOS MESSAGE PATTERNS ============
+
+  /**
+   * Obtener ayuda rápida personalizada por rol
+   */
+  async getQuickHelpForUser(user: JwtUser) {
+    try {
+      const helpQuestions = await this.quickHelpModel
+        .find({ roleCode: user.role.code, isActive: true })
+        .sort({ order: 1 })
+        .select('question order')
+        .lean();
+
+      return {
+        success: true,
+        help: helpQuestions,
+        userRole: {
+          code: user.role.code,
+          name: user.role.name,
+        },
+      };
+    } catch (error) {
+      throw new RpcException({
+        status: 400,
+        success: false,
+        message: 'Error al obtener ayuda rápida',
+        error: error.message,
+      });
+    }
+  }
+
+  /**
+   * Obtener guía paso a paso específica
+   */
+  async getGuideByKey(guideKey: string, user: JwtUser) {
+    try {
+      const guide = await this.systemGuideModel
+        .findOne({
+          guideKey,
+          applicableRoles: { $in: [user.role.code, 'ALL'] },
+          isActive: true,
+        })
+        .select('guideKey title description steps priority')
+        .lean();
+
+      if (!guide) {
+        throw new RpcException({
+          status: 404,
+          success: false,
+          message: `Guía '${guideKey}' no encontrada o no disponible para el rol ${user.role.code}`,
+        });
+      }
+
+      return {
+        success: true,
+        guide,
+      };
+    } catch (error) {
+      if (error instanceof RpcException) {
+        throw error;
+      }
+      throw new RpcException({
+        status: 400,
+        success: false,
+        message: 'Error al obtener la guía',
+        error: error.message,
+      });
+    }
+  }
+
+  /**
+   * Obtener lista de guías disponibles para el rol del usuario
+   */
+  async getAvailableGuidesForUser(user: JwtUser) {
+    try {
+      const guides = await this.systemGuideModel
+        .find({
+          applicableRoles: { $in: [user.role.code, 'ALL'] },
+          isActive: true,
+        })
+        .select('guideKey title description priority')
+        .sort({ priority: -1, title: 1 })
+        .lean();
+
+      return {
+        success: true,
+        guides,
+        userRole: {
+          code: user.role.code,
+          name: user.role.name,
+        },
+      };
+    } catch (error) {
+      throw new RpcException({
+        status: 400,
+        success: false,
+        message: 'Error al obtener las guías disponibles',
+        error: error.message,
+      });
+    }
   }
 }
