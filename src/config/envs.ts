@@ -7,6 +7,7 @@ interface EnvVars {
   NATS_SERVERS: string;
   MONGODB_URI: string;
   CLAUDE_API_KEY: string;
+  POSTGRES_URI: string;
 }
 
 const envsSchema = joi
@@ -22,6 +23,10 @@ const envsSchema = joi
       .default('development'),
     MONGODB_URI: joi.string().required().description('MongoDB connection URI'),
     CLAUDE_API_KEY: joi.string().required().description('Claude API key'),
+    POSTGRES_URI: joi
+      .string()
+      .required()
+      .description('PostgreSQL connection URI'),
   })
   .unknown(true);
 
