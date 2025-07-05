@@ -1,11 +1,11 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import { RoleUser } from 'src/common/interfaces/user.interface';
 import { ContextService } from './context.service';
 import { CreateContextBaseDto } from './dto/create-base-context.dto';
 import { CreateQuickHelpDto } from './dto/create-quick-help.dto';
 import { CreateRoleContextDto } from './dto/create-role-context.dto';
 import { CreateSystemGuideDto } from './dto/create-system-guide.dto';
-import { User } from 'src/common/interfaces/user.interface';
 
 @Controller()
 export class ContextController {
@@ -31,18 +31,18 @@ export class ContextController {
     return this.contextService.createRoleContext(data);
   }
 
-  @MessagePattern({ cmd: 'quick-help' })
-  getQuickHelp(@Payload() data: { user: User }) {
-    return this.contextService.getQuickHelpForUser(data.user);
+  @MessagePattern({ cmd: 'context.quick-help.get-by-role' })
+  getQuickHelp(@Payload() role: RoleUser) {
+    return this.contextService.getQuickHelpForUser(role);
   }
 
-  @MessagePattern({ cmd: 'guide' })
-  getGuideByKey(@Payload() data: { guideKey: string; user: User }) {
-    return this.contextService.getGuideByKey(data.guideKey, data.user);
+  @MessagePattern({ cmd: 'context.guide.by-key' })
+  getGuideByKey(@Payload() data: { guideKey: string; role: RoleUser }) {
+    return this.contextService.getGuideByKey(data.guideKey, data.role);
   }
 
-  @MessagePattern({ cmd: 'available-guides' })
-  getAvailableGuides(@Payload() data: { user: User }) {
-    return this.contextService.getAvailableGuidesForUser(data.user);
+  @MessagePattern({ cmd: 'context.available-guides.get-by-role' })
+  getAvailableGuides(@Payload() role: RoleUser) {
+    return this.contextService.getAvailableGuidesForUser(role);
   }
 }

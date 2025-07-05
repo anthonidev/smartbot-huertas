@@ -10,19 +10,7 @@ import { SystemGuide } from './entities/system-guide.entity';
 import { CreateSystemGuideDto } from './dto/create-system-guide.dto';
 import { RoleContext } from './entities/role-context.entity';
 import { CreateRoleContextDto } from './dto/create-role-context.dto';
-
-interface JwtUser {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  fullName: string;
-  role: {
-    id: number;
-    name: string;
-    code: string;
-  };
-}
+import { RoleUser } from 'src/common/interfaces/user.interface';
 
 @Injectable()
 export class ContextService {
@@ -341,20 +329,27 @@ export class ContextService {
   /**
    * Obtener ayuda rápida personalizada por rol
    */
-  async getQuickHelpForUser(user: JwtUser) {
+  async getQuickHelpForUser(role: RoleUser) {
     try {
       const helpQuestions = await this.quickHelpModel
-        .find({ roleCode: user.role.code, isActive: true })
+        .find({ roleCode: role.code, isActive: true })
         .sort({ order: 1 })
         .select('question order')
         .lean();
 
+      // Transformar _id a id
+      const transformedQuestions = helpQuestions.map((question) => ({
+        id: question._id,
+        question: question.question,
+        order: question.order,
+      }));
+
       return {
         success: true,
-        help: helpQuestions,
+        help: transformedQuestions,
         userRole: {
-          code: user.role.code,
-          name: user.role.name,
+          code: role.code,
+          name: role.name,
         },
       };
     } catch (error) {
@@ -366,26 +361,25 @@ export class ContextService {
       });
     }
   }
-
   /**
    * Obtener guía paso a paso específica
    */
-  async getGuideByKey(guideKey: string, user: JwtUser) {
+  async getGuideByKey(guideKey: string, role: RoleUser) {
     try {
       const guide = await this.systemGuideModel
         .findOne({
           guideKey,
-          applicableRoles: { $in: [user.role.code, 'ALL'] },
+          applicableRoles: { $in: [role.code, 'ALL'] },
           isActive: true,
         })
-        .select('guideKey title description steps priority')
+        .select('guideKey title description steps  -_id')
         .lean();
 
       if (!guide) {
         throw new RpcException({
           status: 404,
           success: false,
-          message: `Guía '${guideKey}' no encontrada o no disponible para el rol ${user.role.code}`,
+          message: `Guía '${guideKey}' no encontrada o no disponible para el rol ${role.code}`,
         });
       }
 
@@ -409,14 +403,14 @@ export class ContextService {
   /**
    * Obtener lista de guías disponibles para el rol del usuario
    */
-  async getAvailableGuidesForUser(user: JwtUser) {
+  async getAvailableGuidesForUser(role: RoleUser) {
     try {
       const guides = await this.systemGuideModel
         .find({
-          applicableRoles: { $in: [user.role.code, 'ALL'] },
+          applicableRoles: { $in: [role.code, 'ALL'] },
           isActive: true,
         })
-        .select('guideKey title description priority')
+        .select('guideKey title description -_id')
         .sort({ priority: -1, title: 1 })
         .lean();
 
@@ -424,8 +418,8 @@ export class ContextService {
         success: true,
         guides,
         userRole: {
-          code: user.role.code,
-          name: user.role.name,
+          code: role.code,
+          name: role.name,
         },
       };
     } catch (error) {
