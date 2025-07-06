@@ -7,7 +7,6 @@ import { QueryClassificationService } from './agents/query-clasification.service
 import { ResponseGenerationService } from './agents/response-generation.service';
 import { TitleGenerationService } from './agents/title-generation.service';
 import { ChatbotController } from './chatbot.controller';
-import { ChatbotService } from './chatbot.service';
 import { ChatMessage, ChatMessageSchema } from './entities/chat-message.entity';
 import {
   ChatRateLimit,
@@ -15,6 +14,7 @@ import {
 } from './entities/chat-rate-limit.entity';
 import { ChatSession, ChatSessionSchema } from './entities/chat-session.entity';
 import { ChatMessageService } from './services/ChatMessageService.service';
+import { RateLimitService } from './services/rate-limit.service';
 
 @Module({
   imports: [
@@ -28,13 +28,13 @@ import { ChatMessageService } from './services/ChatMessageService.service';
   ],
   controllers: [ChatbotController],
   providers: [
-    ChatbotService,
     ChatMessageService,
+    RateLimitService,
     TitleGenerationService,
     QueryClassificationService,
     DatabaseQueryService,
     ResponseGenerationService,
   ],
-  exports: [ChatMessageService],
+  exports: [ChatMessageService, RateLimitService],
 })
 export class ChatbotModule {}
