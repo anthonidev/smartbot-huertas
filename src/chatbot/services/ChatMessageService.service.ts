@@ -303,4 +303,178 @@ export class ChatMessageService {
       // No lanzamos error para no interrumpir el flujo principal
     }
   }
+  async getSessionHistory(sessionId: string, user: User) {
+    try {
+      // Verificar que la sesión pertenezca al usuario
+      const session = await this.chatSessionModel
+        .findOne({
+          _id: sessionId,
+          user: user.id,
+          isActive: true,
+        })
+        .populate({
+          path: 'messages',
+          model: 'ChatMessage',
+          options: {
+            sort: { createdAt: 1 }, // Orden cronológico
+          },
+        })
+        .lean();
+
+      if (!session) {
+        throw new RpcException({
+          status: 404,
+          success: false,
+          message: 'Sesión no encontrada o no pertenece al usuario',
+        });
+      }
+
+      // Formatear mensajes para la respuesta
+      const messages = (session.messages as any[]).map((msg) => ({
+        id: msg._id,
+        role: msg.role,
+        content: msg.content,
+        timestamp: msg.createdAt,
+        metadata: msg.metadata,
+      }));
+
+      return {
+        success: true,
+        sessionId,
+        title: session.title || 'Conversación',
+        messages,
+      };
+    } catch (error) {
+      if (error instanceof RpcException) {
+        throw error;
+      }
+      this.logger.error(
+        `Error obteniendo historial de sesión: ${error.message}`,
+      );
+      throw new RpcException({
+        status: 400,
+        success: false,
+        message: 'Error al obtener el historial de la sesión',
+        error: error.message,
+      });
+    }
+  }
+  async getUserSessions(id: string) {
+    try {
+      const sessions = await this.chatSessionModel
+        .find({
+          user: id,
+          // isActive: true,
+        })
+        .select('_id title createdAt updatedAt')
+        .sort({ updatedAt: -1 }) // Más recientes primero
+        .lean();
+
+      this.logger.debug(
+        `✅ Sesiones obtenidas para usuario : ${sessions.length}`,
+      );
+
+      // Formatear sesiones para la respuesta
+      const formattedSessions = sessions.map((session) => ({
+        id: session._id,
+        title: session.title || 'Conversación',
+        createdAt: session.createdAt,
+        updatedAt: session.updatedAt,
+      }));
+
+      return {
+        success: true,
+        sessions: formattedSessions,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Error obteniendo sesiones del usuario: ${error.message}`,
+      );
+      throw new RpcException({
+        status: 400,
+        success: false,
+        message: 'Error al obtener las sesiones del usuario',
+        error: error.message,
+      });
+    }
+  }
+  async closeSession(sessionId: string, userId: string) {
+    try {
+      // Verificar que la sesión pertenezca al usuario y esté activa
+      const session = await this.chatSessionModel.findOne({
+        _id: sessionId,
+        user: userId,
+        isActive: true,
+      });
+
+      if (!session) {
+        throw new RpcException({
+          status: 404,
+          success: false,
+          message: 'Sesión no encontrada o ya está cerrada',
+        });
+      }
+
+      // Marcar la sesión como inactiva
+      session.isActive = false;
+      await session.save();
+
+      return {
+        success: true,
+        message: 'Sesión cerrada exitosamente',
+      };
+    } catch (error) {
+      if (error instanceof RpcException) {
+        throw error;
+      }
+      this.logger.error(`Error cerrando sesión: ${error.message}`);
+      throw new RpcException({
+        status: 400,
+        success: false,
+        message: 'Error al cerrar la sesión',
+        error: error.message,
+      });
+    }
+  }
+  async deleteSession(sessionId: string, userId: string) {
+    try {
+      // Verificar que la sesión pertenezca al usuario
+      const session = await this.chatSessionModel.findOne({
+        _id: sessionId,
+        user: userId,
+      });
+
+      if (!session) {
+        throw new RpcException({
+          status: 404,
+          success: false,
+          message: 'Sesión no encontrada o no pertenece al usuario',
+        });
+      }
+
+      // Eliminar todos los mensajes asociados a la sesión
+      await this.chatMessageModel.deleteMany({
+        session: sessionId,
+      });
+
+      // Eliminar la sesión
+      await this.chatSessionModel.findByIdAndDelete(sessionId);
+
+      return {
+        success: true,
+        message: 'Sesión eliminada exitosamente',
+      };
+    } catch (error) {
+      if (error instanceof RpcException) {
+        throw error;
+      }
+      this.logger.error(`Error eliminando sesión: ${error.message}`);
+      throw new RpcException({
+        status: 400,
+        success: false,
+        message: 'Error al eliminar la sesión',
+        error: error.message,
+      });
+    }
+  }
 }
